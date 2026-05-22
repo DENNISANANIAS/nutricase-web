@@ -41,7 +41,29 @@ function DataPanel({ unlockedData, caseData }) {
           {renderData(v, d+1)}
         </div>
       )
-      if (Array.isArray(v)) return <div key={k} className="text-xs mb-0.5"><span className="text-slate-400">{k.replace(/_/g,' ')}: </span><span className="text-slate-700">{v.join(', ')}</span></div>
+      if (Array.isArray(v)) {
+        if (v.length === 0) return (
+          <div key={k} className="text-xs mb-0.5">
+            <span className="text-slate-400">{k.replace(/_/g,' ')}: </span>
+            <span className="text-slate-500 italic">Sem uso de {k.replace(/_/g,' ')}</span>
+          </div>
+        )
+        if (typeof v[0] === 'object' && v[0] !== null) {
+          // Arrays of objects: show nome + dose if available, else all string values
+          const lines = v.map(item => {
+            if (item.nome && item.dose) return `${item.nome} ${item.dose}`
+            if (item.nome) return item.nome
+            return Object.values(item).filter(x => typeof x === 'string').join(' ')
+          }).join(' · ')
+          return (
+            <div key={k} className="text-xs mb-0.5">
+              <span className="text-slate-400">{k.replace(/_/g,' ')}: </span>
+              <span className="text-slate-700">{lines}</span>
+            </div>
+          )
+        }
+        return <div key={k} className="text-xs mb-0.5"><span className="text-slate-400">{k.replace(/_/g,' ')}: </span><span className="text-slate-700">{v.join(', ')}</span></div>
+      }
       return <div key={k} className="text-xs mb-0.5"><span className="text-slate-400">{k.replace(/_/g,' ')}: </span><span className="text-slate-700">{String(v)}</span></div>
     })
   }
