@@ -52,7 +52,6 @@ export default function Admin() {
           titulo, schema_version: m.schema_version || 'v5.0',
           categoria_id: cat.id, dificuldade_id: dif.id,
           revisado: true, ativo: true,
-          tempo_estimado_minutos: m.tempo_estimado_minutos || 25,
           payload: json
         }, { onConflict: 'titulo' })
 
