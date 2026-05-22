@@ -28,7 +28,7 @@ export default function Dashboard() {
       const [{ data: casesData }, { data: sessionsData }] = await Promise.all([
         supabase
           .from('cases')
-          .select('id, titulo, schema_version, ativo, revisado, tempo_estimado_minutos, categories(nome, slug), difficulty_levels(nome)')
+          .select('id, titulo, schema_version, ativo, revisado, payload, categories(nome, slug), difficulty_levels(nome)')
           .eq('ativo', true)
           .order('criado_em', { ascending: false }),
         supabase
@@ -122,7 +122,7 @@ export default function Dashboard() {
                 </p>
                 <div className="flex items-center gap-2 text-xs text-slate-400 mb-4">
                   <Clock size={12} />
-                  <span>{c.tempo_estimado_minutos || 25} min estimados</span>
+                  <span>{c.payload?.meta?.tempo_estimado_minutos || 25} min estimados</span>
                 </div>
                 <div className="mt-auto">
                   {status === 'evaluated' ? (
