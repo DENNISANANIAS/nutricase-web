@@ -1,14 +1,14 @@
-const Anthropic = require('@anthropic-ai/sdk')
+import Anthropic from '@anthropic-ai/sdk'
 
-exports.handler = async (event) => {
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' }
+export default async (req) => {
+  if (req.method !== 'POST') {
+    return new Response('Method Not Allowed', { status: 405 })
   }
 
   try {
-    const { messages, caseData } = JSON.parse(event.body)
+    const { messages, caseData } = await req.json()
     if (!messages || !caseData) {
-      return { statusCode: 400, body: JSON.stringify({ error: 'Missing messages or caseData' }) }
+      return Response.json({ error: 'Missing messages or caseData' }, { status: 400 })
     }
 
     const client   = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -47,7 +47,6 @@ ${(persona.regras_chat || []).map((r, i) => `${i+1}. ${r}`).join('\n')}
 - Mantenha respostas curtas (2-4 frases) e naturais, como uma pessoa real falaria.
 - Caso clínico: ${meta.categoria} | ${meta.dificuldade} | ${meta.subcategoria || ''}`
 
-    // Only keep last 20 messages to avoid token overflow
     const recentMessages = messages.slice(-20)
 
     const response = await client.messages.create({
@@ -57,16 +56,9 @@ ${(persona.regras_chat || []).map((r, i) => `${i+1}. ${r}`).join('\n')}
       messages:   recentMessages
     })
 
-    return {
-      statusCode: 200,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: response.content[0].text })
-    }
+    return Response.json({ content: response.content[0].text })
   } catch (err) {
     console.error('Chat function error:', err)
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: err.message || 'Internal server error' })
-    }
+    return Response.json({ error: err.message || 'Internal server error' }, { status: 500 })
   }
 }
