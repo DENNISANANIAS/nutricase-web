@@ -1,25 +1,23 @@
-const Anthropic = require('@anthropic-ai/sdk')
+import Anthropic from '@anthropic-ai/sdk'
 
-exports.handler = async (event) => {
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' }
+export default async (req) => {
+  if (req.method !== 'POST') {
+    return new Response('Method Not Allowed', { status: 405 })
   }
 
   try {
-    const { conduct, messages, caseData } = JSON.parse(event.body)
+    const { conduct, messages, caseData } = await req.json()
     if (!conduct || !caseData) {
-      return { statusCode: 400, body: JSON.stringify({ error: 'Missing conduct or caseData' }) }
+      return Response.json({ error: 'Missing conduct or caseData' }, { status: 400 })
     }
 
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-    // Build conversation summary
     const conversationText = messages
       .filter(m => m.role === 'user')
       .map(m => `NUTRICIONISTA: ${m.content}`)
       .join('\n')
 
-    // Build evaluation criteria from case
     const avaliacao   = caseData.avaliacao || {}
     const omissoes    = caseData.omissoes_criticas || []
     const condutas    = caseData.condutas_e_orientacoes || []
@@ -103,31 +101,21 @@ Seja justo mas exigente. Justifique cada ponto do feedback em linguagem didátic
 
     const rawText = response.content[0].text.trim()
 
-    // Parse JSON response
     let evaluation
     try {
       evaluation = JSON.parse(rawText)
     } catch (parseErr) {
-      // Attempt to extract JSON from response
       const match = rawText.match(/\{[\s\S]*\}/)
       if (match) evaluation = JSON.parse(match[0])
       else throw new Error('Could not parse evaluation JSON: ' + rawText.substring(0, 200))
     }
 
-    // Ensure score_total matches sum of blocks
     const scoreSum = Object.values(evaluation.scores || {}).reduce((a, b) => a + (Number(b) || 0), 0)
     evaluation.score_total = Math.min(100, Math.max(0, scoreSum))
 
-    return {
-      statusCode: 200,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(evaluation)
-    }
+    return Response.json(evaluation)
   } catch (err) {
     console.error('Evaluate function error:', err)
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: err.message || 'Internal server error' })
-    }
+    return Response.json({ error: err.message || 'Internal server error' }, { status: 500 })
   }
 }
