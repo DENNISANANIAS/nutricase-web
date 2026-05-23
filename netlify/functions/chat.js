@@ -50,7 +50,7 @@ ${(persona.regras_chat || []).map((r, i) => `${i+1}. ${r}`).join('\n')}
     const recentMessages = messages.slice(-20)
 
     const response = await client.messages.create({
-      model:      'claude-haiku-4-5-20251001',
+      model:      'claude-3-5-haiku-20241022',
       max_tokens: 400,
       system:     systemPrompt,
       messages:   recentMessages
